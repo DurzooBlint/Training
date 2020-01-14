@@ -4,13 +4,14 @@ import urllib.request
 import pandas as pd
 import numpy as np
 
-# Constants
+from time import time
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import cross_val_score
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.svm import SVR
 from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import RandomizedSearchCV
 
 DOWNLOAD_ROOT = "https://raw.githubusercontent.com/ageron/handson-ml2/master/"
 HOUSING_PATH = os.path.join("datasets", "housing")
@@ -48,7 +49,7 @@ def display_scores(scores, label):
     print("Standard deviation:", scores.std())
 
 
-def get_best_model(samples, labels, hypersearch=False):
+def get_best_model(samples, labels, search_method='grid'):
     # train different kind of models
     lin_reg = LinearRegression()
     # lin_reg.fit(samples, labels)
@@ -89,29 +90,49 @@ def get_best_model(samples, labels, hypersearch=False):
     # print('SVM linear Regression2 RMSE:', svm_rmse_scores2)
     # print('SVM linear Regression3 RMSE:', svm_rmse_scores3)
 
+
     # perform GridSearch for all models and print out score
 
-    param_grid_linear = param_grid = {'fit_intercept': ['False', 'True'], 'normalize': ['False', 'True'],
-                                      'n_jobs': [-1]}
-    param_grid_decision_tree = {'splitter': ['best', 'random'], 'min_samples_split': [2, 4], 'min_samples_leaf': [1, 2, 4],
-                               'max_features': ['auto', 2, 4, 6, 8]}
-    param_grid_random_forest = {'n_estimators': [100, 200, 300], 'min_samples_split': [2, 4],
-                               'max_features': ['auto', 2, 4, 6, 8], 'min_samples_leaf': [1, 2, 4], 'n_jobs': [-1]}
-    param_grid_svm = {'C': [0.001, 0.1, 10, 100, 10e5], 'gamma': ['scale', 'auto'], 'kernel': ['linear', 'rbf', 'poly']}
+    param_linear = {'fit_intercept': ['False', 'True'], 'normalize': ['False', 'True'],
+                         'n_jobs': [-1]}
+    param_decision_tree = {'splitter': ['best', 'random'], 'min_samples_split': [2, 4], 'min_samples_leaf': [1, 2, 4],
+                           'max_features': ['auto', 2, 4, 6, 8]}
+    param_random_forest = {'n_estimators': [100, 200, 300], 'min_samples_split': [2, 4],
+                           'max_features': ['auto', 2, 4, 6, 8], 'min_samples_leaf': [1, 2, 4], 'n_jobs': [-1]}
+    param_svm = {'C': [0.001, 0.1, 10], 'gamma': ['scale', 'auto'], 'kernel': ['linear', 'rbf']}
 
-    grid_search = GridSearchCV(lin_reg, param_grid_linear, cv=10)
-    grid_search.fit(samples, labels)
-    print('Linear Regression score = %3.2f' %(grid_search.score(samples,labels)))
+    if search_method == 'grid':
 
-    grid_search = GridSearchCV(svm_linear_reg, param_grid_svm, cv=10)
-    grid_search.fit(samples, labels)
-    print('SVM score = %3.2f' %(grid_search.score(samples,labels)))
 
-    grid_search = GridSearchCV(tree_reg, param_grid_decision_tree, cv=10)
-    grid_search.fit(samples, labels)
-    print('Decision Tree Regression score = %3.2f' %(grid_search.score(samples,labels)))
 
-    grid_search = GridSearchCV(random_forest_reg, param_grid_random_forest, cv=10)
-    grid_search.fit(samples, labels)
-    print('Random Forest Regression score = %3.2f' %(grid_search.score(samples,labels)))
+        grid_search = GridSearchCV(lin_reg, param_linear, cv=10, n_jobs=-1)
+        grid_search.fit(samples, labels)
+        print('Grid Linear Regression score = %3.2f' %(grid_search.score(samples, labels)))
 
+        grid_search = GridSearchCV(tree_reg, param_decision_tree, cv=10, n_jobs=-1)
+        grid_search.fit(samples, labels)
+        print('Grid Decision Tree Regression score = %3.2f' %(grid_search.score(samples, labels)))
+
+        grid_search = GridSearchCV(random_forest_reg, param_random_forest, cv=10, n_jobs=-1)
+        grid_search.fit(samples, labels)
+        print('Grid Random Forest Regression score = %3.2f' %(grid_search.score(samples, labels)))
+
+        grid_search = GridSearchCV(svm_linear_reg, param_svm, cv=10)
+        grid_search.fit(samples, labels)
+        print('Grid SVM score = %3.2f' % (grid_search.score(samples, labels)))
+    else:
+        random_search = RandomizedSearchCV(lin_reg, param_linear, n_jobs=-1)
+        random_search.fit(samples, labels)
+        print('Random Linear score = %3.2f' % (random_search.score(samples, labels)))
+
+        random_search = RandomizedSearchCV(tree_reg, param_decision_tree, n_jobs=-1)
+        random_search.fit(samples, labels)
+        print('Random Decision Tree Regression score = %3.2f' % (random_search.score(samples, labels)))
+
+        random_search = RandomizedSearchCV(random_forest_reg, param_random_forest, n_jobs=-1)
+        random_search.fit(samples, labels)
+        print('Random Forest Regression score = %3.2f' % (random_search.score(samples, labels)))
+
+        random_search = RandomizedSearchCV(svm_linear_reg, param_svm, n_jobs=-1)
+        random_search.fit(samples, labels)
+        print('Random SVM score = %3.2f' % (random_search.score(samples, labels)))

@@ -119,7 +119,7 @@ housing_prepared = full_pipeline.fit_transform((housing))
 
 # 4. Train different models and select most accurate #######################################################################
 
-tools.get_best_model(housing_prepared, housing_labels)
+tools.get_best_model(housing_prepared, housing_labels, 'randomized')
 
 
 # lin_reg = LinearRegression()
